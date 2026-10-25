@@ -24,6 +24,8 @@ flowchart TD
 
 At call entry, the Agent restores the session's committed working state and accepts the new input. The conversation can contain earlier user and assistant messages, tool calls, tool results, and a summary from an earlier compaction. New tool results join this working context before the next reasoning step. A single `call()` can therefore prepare many model requests.
 
+Background notifications reach the next model request as separate user-role context messages in inbox order. Each message identifies the automated source and carries the original notification ID and source in metadata; receiving a notification does not grant user approval. File references such as `@./README.md` append a preview alongside the original message's text and images. Line or character limits are marked so the agent can read the original path for the rest.
+
 Configure a shared Builder at application startup. Build and close an Agent for each direct request, keeping the same identity and storage configuration when continuing a conversation:
 
 ```java
@@ -203,6 +205,8 @@ These are the defaults: results exceeding 80,000 characters are eligible, and th
 ### Shorten accumulated conversation
 
 Conversation compaction addresses repeated rounds of work. Its lightweight passes first truncate old tool arguments when configured and prune sufficiently large aggregates of older tool output. If the remaining history meets the message or token trigger, it summarizes a prefix and keeps a recent tail, preserving tool-call/result boundaries.
+
+Argument truncation preserves message IDs, timestamps, metadata and usage, as well as tool-call metadata and execution state. When formatting requests, raw argument JSON is regenerated from the truncated input. Provider server-tool calls are left unchanged because their provider-owned replay metadata may be authoritative.
 
 ```java
 import io.agentscope.harness.agent.memory.compaction.CompactionConfig;
